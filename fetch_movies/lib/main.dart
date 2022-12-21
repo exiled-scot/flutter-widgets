@@ -37,13 +37,17 @@ class MoviesListing extends StatefulWidget {
 class _MoviesListingState extends State<MoviesListing> {
   List<MovieModel> movies = <MovieModel>[];
 
+  //Counter to keep track of netwrok requests
+  int counter = 0;
+
   fetchMovies() async {
     var data = await MoviesProvider.getJson();
 
     setState(() {
-      List<dynamic> results = data['results'];
+      //Increasing counter here
+      counter++;
 
-      //Creating list of MovieModel objects
+      List<dynamic> results = data['results'];
       results.forEach((element) {
         movies.add(
           MovieModel.fromJson(element),
@@ -53,20 +57,29 @@ class _MoviesListingState extends State<MoviesListing> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+
+    //SOLUTION: Fetch movies data only once.
     fetchMovies();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       body: ListView.builder(
-        //Calculating list size
         itemCount: movies == null ? 0 : movies.length,
-        //Building list view entries
         itemBuilder: (context, index) {
           return Padding(
-            //Padding around the list item
             padding: const EdgeInsets.all(8.0),
-            //UPDATED CODE: Using MovieTile object to render movie's title, description and image
-            child: MovieTile(movies, index),
+            child: Column(
+              children: [
+                MovieTile(movies, index),
+                //Widget added to print number of requests made to fetch movies
+                Text("Movies fetched: ${counter}"),
+              ],
+            ),
           );
         },
       ),
@@ -74,7 +87,6 @@ class _MoviesListingState extends State<MoviesListing> {
   }
 }
 
-//NEW CODE: MovieTile object to render visually appealing movie information
 class MovieTile extends StatelessWidget {
   final List<MovieModel> movies;
   final index;
@@ -87,43 +99,26 @@ class MovieTile extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: <Widget>[
-          //Resizing image poster based on the screen size whenever image's path is not null.
-//Resizing image poster based on the screen size whenever the image's path is not null.
           movies[index].poster_path != null
               ? Container(
-            //Making image's width to half of the given screen size
             width: MediaQuery.of(context).size.width / 2,
-
-            //Making image's height to one fourth of the given screen size
             height: MediaQuery.of(context).size.height / 4,
-
-            //Making image box visually appealing by dropping shadow
             decoration: BoxDecoration(
-              //Making image box slightly curved
               borderRadius: BorderRadius.circular(10.0),
-              //Setting box's color to grey
               color: Colors.grey,
-
-              //Decorating image
               image: DecorationImage(
                   image: NetworkImage(MoviesProvider.imagePathPrefix +
                       movies[index].poster_path),
-                  //Image getting all the available space
                   fit: BoxFit.cover),
-
-              //Dropping shadow
               boxShadow: [
                 BoxShadow(
-                  //grey colored shadow
                     color: Colors.grey,
-                    //Applying softening effect
                     blurRadius: 3.0,
-                    //move 1.0 to right (horizontal), and 3.0 to down (vertical)
                     offset: Offset(1.0, 3.0)),
               ],
             ),
           )
-              : Container(), //Empty container when image is not available
+              : Container(),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
@@ -134,7 +129,6 @@ class MovieTile extends StatelessWidget {
                   color: Colors.black),
             ),
           ),
-          //Styling movie's description text
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
@@ -148,7 +142,6 @@ class MovieTile extends StatelessWidget {
   }
 }
 
-//MovielModel object
 class MovieModel {
   final int id;
   final num popularity;
